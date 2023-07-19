@@ -185,8 +185,8 @@ pytesseract.pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesserac
 lastClickTimestamp = None
 howManyMobs = 0
 def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
-    if 'mobs' in image_path:
-        print(image_path)
+    # if 'mobs' in image_path:
+    #     print(image_path)
     global mouse
     global keyboard
     global howManyMobs
@@ -245,61 +245,64 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         for loc in locations:
             global lastClickTimestamp
 
-            if 'map_center' in image_name:
-                top_left = loc
-                middle_x = top_left[0] + needle_w // 2
-                middle_y = top_left[1] + needle_h // 2
+            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 7):
+                if 'map_center' in image_name:
+                    sendHotkey('stop')
 
-                middle_y = middle_y + 18
-
-                middle_point = (middle_x, middle_y)
-                mouse.position = middle_point
-
-                mouse.press(Button.left )
-                delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
-                time.sleep(delay/1000)  # Sleep for the amount of seconds generated
-                mouse.release(Button.left)
-                
-                #time.sleep(0.6)
-
-                # middle_point = (middle_x + 23, middle_y + 30)
-                # mouse.position = middle_point
-                # mouse.press(Button.left )
-                # delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
-                # time.sleep(delay/1000)  # Sleep for the amount of seconds generated
-                # mouse.release(Button.left)
-
-                #time.sleep(0.6)
-
-                mouse.position = current_mouse_position
-                #wasMouseClick = True
-
-            if 'waypoint' in image_name:
-                if not wasMouseClick and random.choice([True, False]):
-                    lastClickTimestamp = time.time()
                     top_left = loc
                     middle_x = top_left[0] + needle_w // 2
                     middle_y = top_left[1] + needle_h // 2
 
-                    middle_y = middle_y + 20
+                    middle_y = middle_y + 18
 
                     middle_point = (middle_x, middle_y)
-                    
                     mouse.position = middle_point
 
-                    delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
-                    time.sleep(delay/1000)  # Sleep for the amount of seconds generated
-    
-                    mouse.press(Button.left)
+                    mouse.press(Button.left )
                     delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
                     time.sleep(delay/1000)  # Sleep for the amount of seconds generated
                     mouse.release(Button.left)
-                    wasMouseClick = True
-
-                    #mouse.position = current_mouse_position
                     
-                else:
-                    continue
+                    #time.sleep(0.6)
+
+                    # middle_point = (middle_x + 23, middle_y + 30)
+                    # mouse.position = middle_point
+                    # mouse.press(Button.left )
+                    # delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
+                    # time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                    # mouse.release(Button.left)
+
+                    #time.sleep(0.6)
+
+                    mouse.position = current_mouse_position
+                    #wasMouseClick = True
+
+                if 'waypoint' in image_name:
+                    if not wasMouseClick and random.choice([True, False]):
+                        lastClickTimestamp = time.time()
+                        top_left = loc
+                        middle_x = top_left[0] + needle_w // 2
+                        middle_y = top_left[1] + needle_h // 2
+
+                        middle_y = middle_y + 20
+
+                        middle_point = (middle_x, middle_y)
+                        
+                        mouse.position = middle_point
+
+                        delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
+                        time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+        
+                        mouse.press(Button.left)
+                        delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
+                        time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                        mouse.release(Button.left)
+                        wasMouseClick = True
+
+                        mouse.position = current_mouse_position
+                        
+                    else:
+                        pass
 
             # Determine the box positions
             top_left = loc
@@ -447,6 +450,15 @@ def heal():
     if (mana != 10 and mana < 60) or (hp != 10 and hp < 40):
             sendHotkey('F5')
 
+def screenshot(thread_name):
+    wincap = WindowCapture('Dragon Ball Legend')
+    screenshot = wincap.get_screenshot()
+    #screenshot = pyautogui.screenshot()
+    screenshot_image = screenshot
+    screenshot_image_gray = screenshot
+    update_tkinker('update_' + str(thread_name), screenshot_image)
+    return screenshot_image
+
 filtered_dict = None
 def listen(thread_name):
     time.sleep(2)
@@ -455,13 +467,18 @@ def listen(thread_name):
     global canvas
     global loopFiles
     global filtered_dict
-    
+
     if filtered_dict == None:
         filtered_dict = {key: value for key, value in folder_files_dict.items() if thread_name in key}
         print(filtered_dict)
         print('thread name -> ' + thread_name)
     
     while True:
+
+        if thread_name == 'smooth':
+            screenshot(thread_name)
+            continue
+
         if 'heal' in thread_name:
             print('heal check...')
             heal()
@@ -470,21 +487,13 @@ def listen(thread_name):
                 #print('current folder ' + str(folder))
                 for image_path in files:
                     #print('current image ' + str(image_path))
-    
-                    
-                    if 'waypoint' not in image_path or ('waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 7)):
-                        image_name = image_path.split('/')[-1]
-                        if 'waypoint' in image_name:
-                            sendHotkey('stop')
-                            time.sleep(1)
 
-                        wincap = WindowCapture('Dragon Ball Legend')
-                        screenshot = wincap.get_screenshot()
-                        #screenshot = pyautogui.screenshot()
-                        screenshot_image = screenshot
-                        screenshot_image_gray = screenshot
-                        update_tkinker('update_' + str(thread_name), screenshot_image)
-                        response = recognize(image_path, screenshot_image, screenshot_image_gray, thread_name)
+                    screenshot_image = screenshot(thread_name)
+                    image_name = image_path.split('/')[-1]
+                    if 'waypoint' in image_name:
+                        screenshot_image = screenshot(thread_name)
+                    
+                    response = recognize(image_path, screenshot_image, None, thread_name)
 
                     if response == True:
                         break
@@ -500,8 +509,8 @@ def update_tkinker(file_name, screenshot_image):
     global canvas
     global loopFiles
     file_name = file_name + '.jpg'
-    if not 'mob' in file_name:
-        return
+    # if not 'mob' in file_name:
+    #     pass
 
     # cv.imwrite(file_name, screenshot_image)
     # tk_image  = Image.open(file_name)
@@ -547,9 +556,12 @@ if __name__ == '__main__':
 
     cavebot_thread = Process(target=listen, args=('waypoint', ))
 
+    smooth_thread = Process(target=listen, args=('smooth', ))
+
     threads.append(heal_thread)
     threads.append(mob_thread)
     threads.append(cavebot_thread)
+    threads.append(smooth_thread)
 
     for thread in threads:
         thread.start()
