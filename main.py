@@ -180,6 +180,7 @@ def is_within_range(location):
     distance = math.sqrt((center_x - x) ** 2 + (center_y - y) ** 2)
 
     return 150 <= distance <= 450
+import psutil
 
 pytesseract.pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 lastClickTimestamp = None
@@ -378,6 +379,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 window_width = 1200
 window_height = 600
 def on_close():
+    print('on close function')
     global root
     global threads
     # global instance
@@ -386,11 +388,12 @@ def on_close():
     #     player.get_media().release()
     #     player.release()
     #     player.get_instance().release()
+    print(threads)
     for speech_thread in threads:
         if speech_thread.is_alive():
             speech_thread.terminate()
-    root.destroy()
-    sys.exit()
+    #root.destroy()
+    sys.exit(1)
 
 import os
 
@@ -471,6 +474,10 @@ def screenshot(thread_name):
     update_tkinker('update_' + str(thread_name), screenshot_image)
     return screenshot_image
 
+from msvcrt import getch
+import os
+import signal
+
 filtered_dict = None
 def listen(thread_name):
     time.sleep(2)
@@ -484,7 +491,7 @@ def listen(thread_name):
         filtered_dict = {key: value for key, value in folder_files_dict.items() if thread_name in key}
         print(filtered_dict)
         print('thread name -> ' + thread_name)
-    
+
     while True:
 
         if thread_name == 'smooth':
@@ -556,8 +563,12 @@ root.protocol("WM_DELETE_WINDOW", on_close)
 canvas = tk.Canvas(root, width=window_width, height=window_height, highlightthickness=0)
 canvas.pack()
 threads = []
+
+
+
 from multiprocessing import Process, Event
 if __name__ == '__main__':
+
     #WindowCapture.list_window_names()
 
     event = Event()
@@ -578,4 +589,20 @@ if __name__ == '__main__':
     for thread in threads:
         thread.start()
 
-    root.mainloop()
+    from pynput.keyboard import Listener
+
+    def on_press(key):
+        #print("Key pressed: {0}".format(key))
+        key = str(key).replace("'", '')
+        if str(key) == 'q':
+            print('terminating')
+            on_close()
+
+    def on_release(key):
+        pass
+
+    with Listener(on_press=on_press, on_release=on_release) as listener:
+        print('click q to exit(1)')
+        listener.join()
+
+    #root.mainloop()
