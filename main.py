@@ -413,7 +413,12 @@ for root, dirs, files in os.walk(folder_path):
 from PIL import ImageGrab
 def capture_rectangle(left, upper, right, lower):
     # Capture the screen region within the specified rectangle
-    image = ImageGrab.grab(bbox=(left, upper, right, lower))
+    image = None
+    try:
+        image = ImageGrab.grab(bbox=(left, upper, right, lower))
+    except:
+        pass
+    
     return image
 
 import re
@@ -424,6 +429,9 @@ def remove_non_numbers(text):
 
 def get_value_by_cooridantes(left, upper, right, lower):
     hp_screenshot = capture_rectangle(left, upper, right, lower)
+    if hp_screenshot == None:
+        return 100
+    
     custom_config = r'--psm 7 --oem 1 -c tessedit_char_whitelist=0123456789'
     text = pytesseract.image_to_string(hp_screenshot, config=custom_config)
 
