@@ -10,3 +10,9 @@
   add monster healthbar pictures to the folder mobs
   add waypoint pictures to the folder waypoint
   add map centering icon to the folder waypoint
+
+  hotkeys:
+    - senzu/mana [F5]
+    - spell [F1]
+    - health [F3]
+  
