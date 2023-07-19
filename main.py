@@ -239,7 +239,8 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         folder_name = os.path.basename(folder_name)
         image_name = image_path.split('/')[-1]
         if 'mob' in folder_name:
-            print('mob found!')
+           #print('mob found!')
+           pass
 
         existing_text_points = []
 
@@ -512,8 +513,8 @@ def update_tkinker(file_name, screenshot_image):
     global canvas
     global loopFiles
     file_name = file_name + '.jpg'
-    # if not 'mob' in file_name:
-    #     pass
+    if not 'mob' in file_name:
+        return
 
     # cv.imwrite(file_name, screenshot_image)
     # tk_image  = Image.open(file_name)
