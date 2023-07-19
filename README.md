@@ -8,6 +8,7 @@
 - continous refresh thread for smoother preview window
 
   Instruction:
+  click q to exit
   add monster healthbar pictures to the folder mobs
   add waypoint pictures to the folder waypoint
   add map centering icon to the folder waypoint
