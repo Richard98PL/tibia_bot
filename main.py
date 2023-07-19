@@ -238,7 +238,8 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         folder_name = os.path.dirname(image_path)  # Extract the folder name
         folder_name = os.path.basename(folder_name)
         image_name = image_path.split('/')[-1]
-        print(image_name)
+        if 'mob' in folder_name:
+            print('mob found!')
 
         existing_text_points = []
 
@@ -248,7 +249,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
             if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 7):
                 if 'map_center' in image_name:
                     sendHotkey('stop')
-
+                    
                     top_left = loc
                     middle_x = top_left[0] + needle_w // 2
                     middle_y = top_left[1] + needle_h // 2
@@ -363,7 +364,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                     sendHotkey('F1')
 
             if wasSalka or wasMouseClick:
-                print('returning....')
+                #print('returning....')
                 return True
     else:
         pass
@@ -444,11 +445,13 @@ def heal():
             sendHotkey('F3')
             time.sleep(0.1)
             sendHotkey('F3')
+            print('hp!')
 
     mana = get_value_by_cooridantes(167,120,202,131)
     #print('mana: ' + str(mana))
     if (mana != 10 and mana < 60) or (hp != 10 and hp < 40):
             sendHotkey('F5')
+            print('mana!')
 
 def screenshot(thread_name):
     wincap = WindowCapture('Dragon Ball Legend')
@@ -480,7 +483,7 @@ def listen(thread_name):
             continue
 
         if 'heal' in thread_name:
-            print('heal check...')
+            #print('heal check...')
             heal()
         else:    
             for folder, files in filtered_dict.items():
