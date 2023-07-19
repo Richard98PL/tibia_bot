@@ -5,6 +5,7 @@
 - heal and mana recognition by OCR (picture to text)
 - endpoints walking and minimap centering by waypoint images
 - multithreading, different thread for each feature - non blocking actions
+- continous refresh thread for smoother preview window
 
   Instruction:
   add monster healthbar pictures to the folder mobs
