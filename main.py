@@ -169,7 +169,7 @@ def sendHotkey(hotkey):
             pass
 
   
-def is_within_range(location):
+def is_within_range(location, maxDistance):
     screen_width = 1920
     screen_height = 1080
     center_x = screen_width / 2
@@ -178,8 +178,9 @@ def is_within_range(location):
     x, y = location  # Unpack the tuple into x and y coordinates
 
     distance = math.sqrt((center_x - x) ** 2 + (center_y - y) ** 2)
+    #print('distance is ->: ' + str(distance))
 
-    return 150 <= distance <= 450
+    return distance <= maxDistance
 import psutil
 
 pytesseract.pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
@@ -191,6 +192,8 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
     global mouse
     global keyboard
     global howManyMobs
+    global current_index
+    global lastClickTimestamp
 
     wasSalka = False
     wasMouseClick = False
@@ -202,7 +205,13 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
     result = cv.matchTemplate(screenshot_image, object, cv.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
 
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+    image_name = image_path.split('/')[-1]
+    
+    if 'waypoint' in image_path:
+        #print(image_path)
+        #print(max_val)
+        pass
+
     if 'mob' in image_path:
         #print('Best match: %s' % str(max_val))
         pass
@@ -219,19 +228,29 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
     if 'missing_mana' in image_path:
         threshold = 0.92
         return
-
-    if 'waypoint' in image_path:
-        threshold = 0.99
-
+    
     if 'mobs' in image_path:
         threshold = 0.69
 
     if 'map_center' in image_path:
         threshold = 0.95
 
+    if '_waypoint' in image_path:
+        threshold = 0.80
+
+    
+    
     locations = np.where(result >= threshold)
     locations = list(zip(*locations[::-1]))
     random.shuffle(locations)
+
+    if '_waypoint' in image_path and not locations:
+        if str(current_index) + '_' in image_path:
+            current_index = current_index + 1
+
+        if current_index >= len(waypoints_reference):
+            current_index = 1
+
     if locations:
         needle_w = object.shape[1]
         needle_h = object.shape[0]
@@ -240,7 +259,6 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
         folder_name = os.path.dirname(image_path)  # Extract the folder name
         folder_name = os.path.basename(folder_name)
-        image_name = image_path.split('/')[-1]
         if 'mob' in folder_name:
            #print('mob found!')
            pass
@@ -248,9 +266,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         existing_text_points = []
 
         for loc in locations:
-            global lastClickTimestamp
-
-            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 7):
+            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 12):
                 if 'map_center' in image_name:
                     sendHotkey('stop')
                     
@@ -282,8 +298,13 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                     mouse.position = current_mouse_position
                     #wasMouseClick = True
 
-                if 'waypoint' in image_name:
-                    if not wasMouseClick and random.choice([True, False]):
+                if 'waypoint' in image_name and str(current_index) + '_' in image_path:
+
+                    current_index = current_index + 1
+                    if current_index >= len(waypoints_reference):
+                        current_index = 1
+
+                    if not wasMouseClick:
                         lastClickTimestamp = time.time()
                         top_left = loc
                         middle_x = top_left[0] + needle_w // 2
@@ -309,6 +330,13 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                     else:
                         pass
 
+
+
+                    #print('clicking waypoint!')
+
+                    #print(image_name)
+                    #if not wasMouseClick and random.choice([True, False]):
+                    
             # Determine the box positions
             top_left = loc
             bottom_right = (top_left[0] + needle_w, top_left[1] + needle_h)
@@ -338,7 +366,9 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
 
             if 'mobs' in folder_name:
-                 wasSalka = True
+                 if is_within_range(middle_point, 385):
+                     wasSalka = True
+
                  hotkey = 'F1'
                  folder_name = folder_name.split('/')[-1] + ' (' + str(max_val) +')'
                  howManyMobs = len(existing_text_points)
@@ -467,6 +497,10 @@ def heal():
             sendHotkey('F5')
             print('mana!')
 
+    # if mana > 70 and mana != 100 and mana != 10:
+    #         print(mana)
+    #         sendHotkey('F3')
+
 def screenshot(thread_name):
     wincap = WindowCapture('Dragon Ball Legend')
     screenshot = wincap.get_screenshot()
@@ -480,7 +514,23 @@ from msvcrt import getch
 import os
 import signal
 
+def custom_sort(item):
+    if item.isdigit():
+        return (0, int(item))
+    else:
+        return (1, item)
+    
+
+
+def combine_arrays_in_dict(dictionary):
+    result = []
+    for key in dictionary:
+        result.extend(dictionary[key])
+    return result
+
 filtered_dict = None
+waypoints_reference = []
+current_index = 1
 def listen(thread_name):
     time.sleep(2)
     global folder_files_dict
@@ -488,10 +538,16 @@ def listen(thread_name):
     global canvas
     global loopFiles
     global filtered_dict
+    global waypoints_reference
 
     if filtered_dict == None:
-        filtered_dict = {key: value for key, value in folder_files_dict.items() if thread_name in key}
+        #filtered_dict = {key: value for key, value in folder_files_dict.items() if thread_name in key}
+        filtered_dict = {key: sorted(value, key=custom_sort) for key, value in folder_files_dict.items() if thread_name in key}
         print(filtered_dict)
+        if 'waypoint' in thread_name:
+            #total_length = sum(len(value) for value in filtered_dict.values())
+            waypoints_reference = combine_arrays_in_dict(filtered_dict)
+        
         print('thread name -> ' + thread_name)
 
     while True:
@@ -513,7 +569,10 @@ def listen(thread_name):
                     image_name = image_path.split('/')[-1]
                     if 'waypoint' in image_name:
                         screenshot_image = screenshot(thread_name)
-                    
+
+                    #print(image_path)
+
+
                     response = recognize(image_path, screenshot_image, None, thread_name)
 
                     if response == True:
