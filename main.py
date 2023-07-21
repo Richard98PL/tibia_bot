@@ -264,7 +264,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         existing_text_points = []
 
         for loc in locations:
-            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 23):
+            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 8):
                 if 'map_center' in image_name:
                     sendHotkey('stop')
                     
@@ -364,7 +364,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
 
             if 'mobs' in folder_name:
-                 if is_within_range(middle_point, 400):
+                 if is_within_range(middle_point, 655):
                      print('that ^ was hit')
                      wasSalka = True
 
@@ -393,7 +393,13 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
             if wasSalka:
                  if wasSalka:
                     sendHotkey('F1')
-                    time.sleep(1.77)
+                    delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
+                    time.sleep((560+delay) / 1000)  # Sleep for the amount of seconds generated
+
+                    sendHotkey('F1')
+                    delay = random.uniform(100, 215)  # Generate a random number between 0 and 10
+                    time.sleep(1.65 + (delay/1000))
+
                     # time.sleep(0.4)
                     # sendHotkey('F1')
 
@@ -485,8 +491,9 @@ def heal():
     #time.sleep(0.5)
     hp = get_value_by_cooridantes(176,96,212,108)
     #print('hp: ' + str(hp))
-    if hp != 10 and hp < 80:
+    if hp != 10 and hp < 78:
             sendHotkey('F3')
+            sendHotkey('F5')
             #time.sleep(0.1)
             #sendHotkey('F3')
             print('hp!')
