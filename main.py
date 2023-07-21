@@ -162,7 +162,7 @@ def sendHotkey(hotkey):
         try:
             db_window.activate()
             keyboard.press(hotkey)
-            delay = random.uniform(25, 80)  # Generate a random number between 0 and 10
+            delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
             time.sleep(delay/1000)  # Sleep for the amount of seconds generated
             keyboard.release(hotkey)
         except:
@@ -170,15 +170,13 @@ def sendHotkey(hotkey):
 
   
 def is_within_range(location, maxDistance):
-    screen_width = 1920
-    screen_height = 1080
-    center_x = screen_width / 2
-    center_y = screen_height / 2
+    center_x = 960
+    center_y = 416
 
     x, y = location  # Unpack the tuple into x and y coordinates
 
-    distance = math.sqrt((center_x - x) ** 2 + (center_y - y) ** 2)
-    #print('distance is ->: ' + str(distance))
+    distance = max(abs(center_x - x), abs(center_y - y))
+    print('distance is ->: ' + str(distance))
 
     return distance <= maxDistance
 import psutil
@@ -266,7 +264,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         existing_text_points = []
 
         for loc in locations:
-            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 12):
+            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 23):
                 if 'map_center' in image_name:
                     sendHotkey('stop')
                     
@@ -366,7 +364,8 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
 
             if 'mobs' in folder_name:
-                 if is_within_range(middle_point, 385):
+                 if is_within_range(middle_point, 400):
+                     print('that ^ was hit')
                      wasSalka = True
 
                  hotkey = 'F1'
@@ -394,6 +393,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
             if wasSalka:
                  if wasSalka:
                     sendHotkey('F1')
+                    time.sleep(1.77)
                     # time.sleep(0.4)
                     # sendHotkey('F1')
 
@@ -482,18 +482,18 @@ def get_value_by_cooridantes(left, upper, right, lower):
         return 100
     
 def heal():
-    time.sleep(0.5)
+    #time.sleep(0.5)
     hp = get_value_by_cooridantes(176,96,212,108)
     #print('hp: ' + str(hp))
-    if hp != 10 and hp < 65:
+    if hp != 10 and hp < 80:
             sendHotkey('F3')
-            time.sleep(0.1)
-            sendHotkey('F3')
+            #time.sleep(0.1)
+            #sendHotkey('F3')
             print('hp!')
 
     mana = get_value_by_cooridantes(167,120,202,131)
     #print('mana: ' + str(mana))
-    if (mana != 10 and mana < 60) or (hp != 10 and hp < 40):
+    if (mana != 10 and mana < 60) or (hp != 10 and hp < 65):
             sendHotkey('F5')
             print('mana!')
 
@@ -532,7 +532,7 @@ filtered_dict = None
 waypoints_reference = []
 current_index = 1
 def listen(thread_name):
-    time.sleep(2)
+    #time.sleep(2)
     global folder_files_dict
     global img
     global canvas
