@@ -203,8 +203,10 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
 
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-    #print('Best match top left position: %s' % str(max_loc))
-   # print('Best match confidence: %s' % max_val)
+    if 'mob' in image_path:
+        #print('Best match: %s' % str(max_val))
+        pass
+    
 
     threshold = 0.5
     if 'full' in image_path:
@@ -222,7 +224,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         threshold = 0.99
 
     if 'mobs' in image_path:
-        threshold = 0.62
+        threshold = 0.69
 
     if 'map_center' in image_path:
         threshold = 0.95
@@ -338,7 +340,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
             if 'mobs' in folder_name:
                  wasSalka = True
                  hotkey = 'F1'
-                 folder_name = folder_name.split('/')[-1] + ' (' + hotkey +')'
+                 folder_name = folder_name.split('/')[-1] + ' (' + str(max_val) +')'
                  howManyMobs = len(existing_text_points)
                  #print('howManyMobs? ' + str(howManyMobs))
 
@@ -362,8 +364,8 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
             if wasSalka:
                  if wasSalka:
                     sendHotkey('F1')
-                    time.sleep(0.4)
-                    sendHotkey('F1')
+                    # time.sleep(0.4)
+                    # sendHotkey('F1')
 
             if wasSalka or wasMouseClick:
                 #print('returning....')
@@ -579,12 +581,12 @@ if __name__ == '__main__':
 
     cavebot_thread = Process(target=listen, args=('waypoint', ))
 
-    smooth_thread = Process(target=listen, args=('smooth', ))
+    #smooth_thread = Process(target=listen, args=('smooth', ))
 
     threads.append(heal_thread)
     threads.append(mob_thread)
     threads.append(cavebot_thread)
-    threads.append(smooth_thread)
+    #threads.append(smooth_thread)
 
     for thread in threads:
         thread.start()
