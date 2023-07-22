@@ -235,12 +235,30 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
     if '_waypoint' in image_path:
         threshold = 0.80
+        #print(image_path)
+        #print('before retry')
+        #print(max_val)
 
     
     
     locations = np.where(result >= threshold)
     locations = list(zip(*locations[::-1]))
     random.shuffle(locations)
+
+    #print(locations)
+    if '_waypoint' in image_path and not locations and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 10):
+        for x in range(3):
+            #print('retry')
+            screenshot_image = screenshot(thread_name)
+            result = cv.matchTemplate(screenshot_image, object, cv.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+            #print('after retry -> ' + str(max_val))
+            if max_val > threshold:
+                print('success retry!!!')
+                locations = np.where(result >= threshold)
+                locations = list(zip(*locations[::-1]))
+                random.shuffle(locations)
+                break
 
     if '_waypoint' in image_path and not locations:
         if str(current_index) + '_' in image_path:
@@ -264,7 +282,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         existing_text_points = []
 
         for loc in locations:
-            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 8):
+            if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 10):
                 if 'map_center' in image_name:
                     sendHotkey('stop')
                     
@@ -272,31 +290,41 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                     middle_x = top_left[0] + needle_w // 2
                     middle_y = top_left[1] + needle_h // 2
 
-                    middle_y = middle_y + 18
+                    middle_y = middle_y + 23
 
                     middle_point = (middle_x, middle_y)
-                    mouse.position = middle_point
 
+                    delay = random.uniform(200, 225)  # Generate a random number between 0 and 10
+
+                    mouse.position = middle_point
+                    time.sleep(delay/1000) 
                     mouse.press(Button.left )
-                    delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
-                    time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                    
+                    time.sleep(delay/1000)
                     mouse.release(Button.left)
                     
-                    #time.sleep(0.6)
+                    time.sleep(delay/1000)
 
-                    # middle_point = (middle_x + 23, middle_y + 30)
-                    # mouse.position = middle_point
-                    # mouse.press(Button.left )
-                    # delay = random.uniform(125, 255)  # Generate a random number between 0 and 10
-                    # time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                    middle_point = (middle_x + 23, middle_y + 24)
+                    mouse.position = middle_point
+
+                    time.sleep(delay/1000)
+                    mouse.press(Button.left)
+                    time.sleep(delay/1000)
+                    mouse.release(Button.left)
+                    time.sleep(delay/1000)
+
+                    # mouse.press(Button.left)
+                    # time.sleep(delay/1000)
                     # mouse.release(Button.left)
-
-                    #time.sleep(0.6)
+                    # time.sleep(delay/1000)
 
                     mouse.position = current_mouse_position
                     #wasMouseClick = True
 
                 if 'waypoint' in image_name and str(current_index) + '_' in image_path:
+                    print(image_name)
+                    print(max_val)
 
                     current_index = current_index + 1
                     if current_index >= len(waypoints_reference):
@@ -398,7 +426,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
                     sendHotkey('F1')
                     delay = random.uniform(100, 215)  # Generate a random number between 0 and 10
-                    time.sleep(1.65 + (delay/1000))
+                    #time.sleep(1.65 + (delay/1000))
 
                     # time.sleep(0.4)
                     # sendHotkey('F1')
