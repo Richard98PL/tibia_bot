@@ -18,6 +18,7 @@ from pynput.mouse import Button, Controller as mousy
 import pygetwindow as gw
 import random
 import math
+from playsound import playsound
 
 
 import win32gui, win32ui, win32con
@@ -154,6 +155,12 @@ def sendHotkey(hotkey):
              hotkey = Key.f11
         elif hotkey =='F1':
              hotkey = Key.f1
+        elif hotkey == 'F2':
+             hotkey = Key.f2
+        elif hotkey == 'F10':
+             hotkey = Key.f10
+        elif hotkey == 'q':
+             hotkey = 'q'
         elif hotkey == 'stop':
              stop_keys = [Key.down, Key.up, Key.right, Key.left]
              hotkey = random.choice(stop_keys)
@@ -181,10 +188,11 @@ def is_within_range(location, maxDistance):
     return distance <= maxDistance
 import psutil
 
+lastMobTimestamp = None
 pytesseract.pytesseract.tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 lastClickTimestamp = None
 howManyMobs = 0
-def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
+def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name, message_queue):
     # if 'mobs' in image_path:
     #     print(image_path)
     global mouse
@@ -192,7 +200,9 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
     global howManyMobs
     global current_index
     global lastClickTimestamp
+    global lastMobTimestamp
 
+    differenceBetweenLastMobFound = None
     wasSalka = False
     wasMouseClick = False
     current_mouse_position = mouse.position
@@ -234,10 +244,13 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         threshold = 0.95
 
     if '_waypoint' in image_path:
-        threshold = 0.80
+        threshold = 0.85
         #print(image_path)
         #print('before retry')
         #print(max_val)
+
+    if 'msgcheck' in image_path:
+        threshold = 0.72
 
     
     
@@ -246,28 +259,32 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
     random.shuffle(locations)
 
     #print(locations)
-    if '_waypoint' in image_path and not locations and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 10):
-        for x in range(3):
-            #print('retry')
-            screenshot_image = screenshot(thread_name)
-            result = cv.matchTemplate(screenshot_image, object, cv.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-            #print('after retry -> ' + str(max_val))
-            if max_val > threshold:
-                print('success retry!!!')
-                locations = np.where(result >= threshold)
-                locations = list(zip(*locations[::-1]))
-                random.shuffle(locations)
-                break
+    # if '_waypoint' in image_path and not locations and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 15):
+    #     for x in range(3):
+    #         #print('retry')
+    #         screenshot_image = screenshot(thread_name)
+    #         result = cv.matchTemplate(screenshot_image, object, cv.TM_CCOEFF_NORMED)
+    #         min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+    #         #print('after retry -> ' + str(max_val))
+    #         if max_val > threshold:
+    #             print('success retry!!!')
+    #             locations = np.where(result >= threshold)
+    #             locations = list(zip(*locations[::-1]))
+    #             random.shuffle(locations)q
+    #             break
 
-    if '_waypoint' in image_path and not locations:
-        if str(current_index) + '_' in image_path:
-            current_index = current_index + 1
+    # if '_waypoint' in image_path and not locations:
+    #     if str(current_index) + '_' in image_path:
+    #         current_index = current_index + 1
 
-        if current_index >= len(waypoints_reference):
-            current_index = 1
+    #     if current_index >= len(waypoints_reference):
+    #         current_index = 1
 
     if locations:
+        if 'msgcheck':
+            print(max_val)
+            print('MSG CHECK!!!')
+        
         needle_w = object.shape[1]
         needle_h = object.shape[0]
         line_color = (0, 255, 0)  # Green color for lines
@@ -282,7 +299,16 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
         existing_text_points = []
 
         for loc in locations:
+
+            if 'msgcheck' in image_path:
+                #playsound('alarm.wav')
+                os.startfile('alarm.wav')
+                sendHotkey('q')
+
             if 'waypoint' in image_path and (lastClickTimestamp == None or time.time() - lastClickTimestamp >= 10):
+
+                awaiting_no_mobs = message_queue.get()
+                
                 if 'map_center' in image_name:
                     sendHotkey('stop')
                     
@@ -314,21 +340,22 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                     mouse.release(Button.left)
                     time.sleep(delay/1000)
 
-                    # mouse.press(Button.left)
-                    # time.sleep(delay/1000)
-                    # mouse.release(Button.left)
-                    # time.sleep(delay/1000)
+                    mouse.press(Button.left)
+                    time.sleep(delay/1000)
+                    mouse.release(Button.left)
+                    time.sleep(delay/1000)
 
-                    mouse.position = current_mouse_position
+                    #mouse.position = current_mouse_position
                     #wasMouseClick = True
 
-                if 'waypoint' in image_name and str(current_index) + '_' in image_path:
+                #if 'waypoint' in image_name and str(current_index) + '_' in image_path:
+                if 'waypoint' in image_name and random.choice([False, True, False]):
                     print(image_name)
                     print(max_val)
 
-                    current_index = current_index + 1
-                    if current_index >= len(waypoints_reference):
-                        current_index = 1
+                    # current_index = current_index + 1
+                    # if current_index >= len(waypoints_reference):
+                    #     current_index = 1
 
                     if not wasMouseClick:
                         lastClickTimestamp = time.time()
@@ -336,7 +363,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                         middle_x = top_left[0] + needle_w // 2
                         middle_y = top_left[1] + needle_h // 2
 
-                        middle_y = middle_y + 20
+                        middle_y = middle_y + 21
 
                         middle_point = (middle_x, middle_y)
                         
@@ -351,7 +378,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
                         mouse.release(Button.left)
                         wasMouseClick = True
 
-                        mouse.position = current_mouse_position
+                        #mouse.position = current_mouse_position
                         
                     else:
                         pass
@@ -392,7 +419,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
 
             if 'mobs' in folder_name:
-                 if is_within_range(middle_point, 655):
+                 if is_within_range(middle_point, 600):
                      print('that ^ was hit')
                      wasSalka = True
 
@@ -420,21 +447,38 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name):
 
             if wasSalka:
                  if wasSalka:
+                    
+                    lastMobTimestamp = time.time()
+
                     sendHotkey('F1')
                     delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
                     time.sleep((560+delay) / 1000)  # Sleep for the amount of seconds generated
 
                     sendHotkey('F1')
                     delay = random.uniform(100, 215)  # Generate a random number between 0 and 10
-                    #time.sleep(1.65 + (delay/1000))
+                    time.sleep(0.7 + (delay/1000))
 
                     # time.sleep(0.4)
                     # sendHotkey('F1')
+            else:
+               pass
 
             if wasSalka or wasMouseClick:
                 #print('returning....')
                 return True
     else:
+        if 'mobs' in image_path:
+            if lastMobTimestamp == None:
+                if message_queue.empty():
+                    message_queue.put(time.time())
+            else:
+                differenceBetweenLastMobFound = time.time() - lastMobTimestamp
+                print('difference is : ' + str(differenceBetweenLastMobFound))
+
+            if message_queue.empty() and differenceBetweenLastMobFound != None and differenceBetweenLastMobFound > 3:
+                print('sending to queue!')
+                #sendHotkey('F10')
+                message_queue.put(time.time())
         pass
         #print('Needle not found.')
 
@@ -509,38 +553,50 @@ def get_value_by_cooridantes(left, upper, right, lower):
         if text.strip() == '':
             return 100
         else:
-            text = remove_non_numbers(text)
             first_three_letters = text[:2] if len(text) >= 2 else ''
             return int(first_three_letters)
     except:
         return 100
     
+energyRoom = True
+iteration = 0
 def heal():
+    global energyRoom, iteration
     #time.sleep(0.5)
     hp = get_value_by_cooridantes(176,96,212,108)
     #print('hp: ' + str(hp))
-    if hp != 10 and hp < 78:
-            sendHotkey('F3')
-            sendHotkey('F5')
-            #time.sleep(0.1)
-            #sendHotkey('F3')
+    if hp != 10 and hp < 82:
             print('hp!')
+            sendHotkey('F3')
+            #sendHotkey('F5')
+            time.sleep(0.1)
+            if energyRoom is False:
+                sendHotkey('F3')
 
-    mana = get_value_by_cooridantes(167,120,202,131)
-    #print('mana: ' + str(mana))
-    if (mana != 10 and mana < 60) or (hp != 10 and hp < 65):
-            sendHotkey('F5')
-            print('mana!')
+            if energyRoom is True:
+                iteration = iteration + 1
+                print('iteration ->' + str(iteration))
+                if iteration >= 7:
+                    iteration = 0
+                    sendHotkey('stop')
+                    time.sleep(1.5)
+                    sendHotkey('F2')
 
-    # if mana > 70 and mana != 100 and mana != 10:
-    #         print(mana)
-    #         sendHotkey('F3')
+                
+    if energyRoom is False:
+        mana = get_value_by_cooridantes(167,120,202,131)
+        if (mana != 10 and mana < 60):
+                sendHotkey('F5')
+                print('mana!')
 
 def screenshot(thread_name):
     wincap = WindowCapture('Dragon Ball Legend')
     screenshot = wincap.get_screenshot()
     #screenshot = pyautogui.screenshot()
     screenshot_image = screenshot
+    if 'waypoint' in thread_name:
+        #cv.imwrite('wtf2.png', screenshot_image)
+        pass
     screenshot_image_gray = screenshot
     update_tkinker('update_' + str(thread_name), screenshot_image)
     return screenshot_image
@@ -550,10 +606,10 @@ import os
 import signal
 
 def custom_sort(item):
-    if item.isdigit():
-        return (0, int(item))
-    else:
+    if any(char.isdigit() for char in item):
         return (1, item)
+    else:
+        return (0, item)
     
 
 
@@ -566,7 +622,7 @@ def combine_arrays_in_dict(dictionary):
 filtered_dict = None
 waypoints_reference = []
 current_index = 1
-def listen(thread_name):
+def listen(thread_name, message_queue):
     #time.sleep(2)
     global folder_files_dict
     global img
@@ -578,6 +634,7 @@ def listen(thread_name):
     if filtered_dict == None:
         #filtered_dict = {key: value for key, value in folder_files_dict.items() if thread_name in key}
         filtered_dict = {key: sorted(value, key=custom_sort) for key, value in folder_files_dict.items() if thread_name in key}
+        print('filtered dict:')
         print(filtered_dict)
         if 'waypoint' in thread_name:
             #total_length = sum(len(value) for value in filtered_dict.values())
@@ -608,7 +665,7 @@ def listen(thread_name):
                     #print(image_path)
 
 
-                    response = recognize(image_path, screenshot_image, None, thread_name)
+                    response = recognize(image_path, screenshot_image, None, thread_name, message_queue)
 
                     if response == True:
                         break
@@ -662,25 +719,26 @@ threads = []
 
 
 
-from multiprocessing import Process, Event
+from multiprocessing import Process, Event, Queue
 if __name__ == '__main__':
 
     #WindowCapture.list_window_names()
+    message_queue = Queue()
 
     event = Event()
 
-    heal_thread = Process(target=listen, args=('heal', ))
+    heal_thread = Process(target=listen, args=('heal', message_queue, ))
    
-    mob_thread = Process(target=listen, args=('mob', ))
+    mob_thread = Process(target=listen, args=('mob', message_queue, ))
 
-    cavebot_thread = Process(target=listen, args=('waypoint', ))
+    cavebot_thread = Process(target=listen, args=('waypoint', message_queue, ))
 
-    #smooth_thread = Process(target=listen, args=('smooth', ))
+    alarm_thread = Process(target=listen, args=('msgcheck', message_queue, ))
 
     threads.append(heal_thread)
     threads.append(mob_thread)
     threads.append(cavebot_thread)
-    #threads.append(smooth_thread)
+    threads.append(alarm_thread)
 
     for thread in threads:
         thread.start()
