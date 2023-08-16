@@ -144,8 +144,15 @@ class WindowCapture:
 
 keyboard = kb()
 mouse = mousy()
+db_window = None
 def sendHotkey(hotkey):
-    db_window = gw.getWindowsWithTitle('Dragon Ball Legend')[0]
+    global db_window
+    if db_window == None:
+        db_window = gw.getWindowsWithTitle('Dragon Ball Legend')[0]
+    withSpin = False
+    if hotkey == 'spin':
+        withSpin = True
+
     if db_window:
         if hotkey == 'F3':
              hotkey = Key.f3
@@ -167,12 +174,37 @@ def sendHotkey(hotkey):
 
         #db_window.restore()
         try:
+            db_window.show()
+            print('show')
             db_window.activate()
-            keyboard.press(hotkey)
-            delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
-            time.sleep(delay/1000)  # Sleep for the amount of seconds generated
-            keyboard.release(hotkey)
-        except:
+            if withSpin:
+
+                keyboard.press(Key.ctrl_l)
+                delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
+                time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+
+                keyboard.press(Key.up)
+                delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
+                time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                keyboard.release(Key.up)
+
+                delay = random.uniform(15, 25)  # Generate a random number between 0 and 10
+                time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+
+                keyboard.press(Key.down)
+                delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
+                time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                keyboard.release(Key.down)
+
+                keyboard.release(Key.ctrl_l)
+
+            else:
+                keyboard.press(hotkey)
+                delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
+                time.sleep(delay/1000)  # Sleep for the amount of seconds generated
+                keyboard.release(hotkey)
+        except Exception as err:
+            print(err)
             pass
 
   
@@ -419,6 +451,7 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name, 
 
 
             if 'mobs' in folder_name:
+                
                  if is_within_range(middle_point, 600):
                      print('that ^ was hit')
                      wasSalka = True
@@ -450,13 +483,12 @@ def recognize(image_path, screenshot_image, screenshot_image_gray, thread_name, 
                     
                     lastMobTimestamp = time.time()
 
-                    sendHotkey('F1')
-                    delay = random.uniform(15, 45)  # Generate a random number between 0 and 10
-                    time.sleep((560+delay) / 1000)  # Sleep for the amount of seconds generated
 
                     sendHotkey('F1')
                     delay = random.uniform(100, 215)  # Generate a random number between 0 and 10
-                    time.sleep(0.7 + (delay/1000))
+                    time.sleep((555+delay) / 1000)  # Sleep for the amount of seconds generated
+
+                    #time.sleep(0.8 + (delay/1000))
 
                     # time.sleep(0.4)
                     # sendHotkey('F1')
@@ -558,34 +590,44 @@ def get_value_by_cooridantes(left, upper, right, lower):
     except:
         return 100
     
-energyRoom = True
+energyRoom = False
 iteration = 0
 def heal():
     global energyRoom, iteration
     #time.sleep(0.5)
-    hp = get_value_by_cooridantes(176,96,212,108)
+    if energyRoom is False:
+        hp = get_value_by_cooridantes(1803,88,1826,98)
+    else:
+        time.sleep(0.17)
     #print('hp: ' + str(hp))
-    if hp != 10 and hp < 82:
-            print('hp!')
-            sendHotkey('F3')
-            #sendHotkey('F5')
-            time.sleep(0.1)
-            if energyRoom is False:
+    if energyRoom is False:
+        if (energyRoom == False and hp != 10 and hp != 100) or (energyRoom and hp != 10 and hp < 70):
+                print('hp!')
                 sendHotkey('F3')
+                if energyRoom == False:
+                    sendHotkey('F5')
 
-            if energyRoom is True:
-                iteration = iteration + 1
-                print('iteration ->' + str(iteration))
-                if iteration >= 7:
-                    iteration = 0
-                    sendHotkey('stop')
-                    time.sleep(1.5)
-                    sendHotkey('F2')
+
+            #time.sleep(0.1)
+            # if energyRoom is False:
+            #     sendHotkey('F3')
+
+    if energyRoom:
+        iteration = iteration + 1
+        
+        print('iteration ->' + str(iteration))
+        if iteration >= 75:
+            sendHotkey('F3')
+            iteration = 0
+            sendHotkey('spin')
+            time.sleep(1.5)
+            sendHotkey('F2')
 
                 
     if energyRoom is False:
-        mana = get_value_by_cooridantes(167,120,202,131)
-        if (mana != 10 and mana < 60):
+        mana = get_value_by_cooridantes(1804,107,1826,116)
+        print(mana)
+        if (mana != 10 and mana != 100 and mana < 60):
                 sendHotkey('F5')
                 print('mana!')
 
@@ -624,6 +666,9 @@ waypoints_reference = []
 current_index = 1
 def listen(thread_name, message_queue):
     #time.sleep(2)
+    global db_window
+    if db_window == None:
+        db_window = gw.getWindowsWithTitle('Dragon Ball Legend')[0]
     global folder_files_dict
     global img
     global canvas
@@ -701,7 +746,7 @@ def update_tkinker(file_name, screenshot_image):
     canvas.update()
 
 root = tk.Tk()
-root.attributes("-topmost", True) 
+root.attributes("-topmost", False) 
 root.title("PROJECT DICK LAURENT IS DEAD")
 ws = root.winfo_screenwidth() # width of the screen
 hs = root.winfo_screenheight() # height of the screen
